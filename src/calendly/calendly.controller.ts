@@ -78,11 +78,18 @@ export class CalendlyController {
   @Get('events')
   @UseGuards(AuthGuard('jwt'))
   async getEvents(@Request() req: any) {
+    console.log('🔍 DEBUG: getEvents endpoint called');
+    console.log('📋 Request cookies:', req.cookies);
+    console.log('📋 Request headers:', req.headers);
+    console.log('👤 Request user:', req.user);
+    
     try {
       // Obtener el token de acceso de Calendly desde el usuario autenticado
       // Por ahora, usaremos un token de acceso hardcodeado para pruebas
       // En producción, esto debería venir de la base de datos del usuario
       const calendlyAccessToken = this.configService.get('CALENDLY_ACCESS_TOKEN');
+      
+      console.log('🔑 Calendly Access Token present:', !!calendlyAccessToken);
       
       if (!calendlyAccessToken) {
         throw new UnauthorizedException('No se encontró token de acceso de Calendly. Por favor, configure CALENDLY_ACCESS_TOKEN en las variables de entorno.');
@@ -94,6 +101,8 @@ export class CalendlyController {
         status: 'active'
       });
 
+      console.log('✅ Events retrieved successfully:', events.collection?.length || 0, 'events');
+
       return {
         message: 'Eventos de Calendly obtenidos exitosamente',
         status: 'success',
@@ -101,7 +110,7 @@ export class CalendlyController {
         data: events
       };
     } catch (error) {
-      console.error('Error obteniendo eventos de Calendly:', error);
+      console.error('❌ Error obteniendo eventos de Calendly:', error);
       return {
         message: 'Error al obtener eventos de Calendly',
         status: 'error',

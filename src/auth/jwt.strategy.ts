@@ -12,13 +12,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromExtractors([
         // Primero intentar extraer de las cookies
         (request) => {
+          console.log('🔍 JWT Strategy: Checking cookies...');
+          console.log('📋 Request cookies:', request?.cookies);
+          
           if (request && request.cookies) {
-            return request.cookies['jwt_token'];
+            const token = request.cookies['jwt'];
+            console.log('🍪 JWT Token from cookie:', token ? 'Presente' : 'Ausente');
+            return token;
           }
+          console.log('❌ No cookies found in request');
           return null;
         },
         // Si no hay cookie, intentar del header Authorization
-        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (request) => {
+          console.log('🔍 JWT Strategy: Checking Authorization header...');
+          const authHeader = request?.headers?.authorization;
+          console.log('📋 Authorization header:', authHeader ? 'Presente' : 'Ausente');
+          
+          if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.substring(7);
+            console.log('🔑 JWT Token from header:', token ? 'Presente' : 'Ausente');
+            return token;
+          }
+          return null;
+        },
       ]),
       ignoreExpiration: false,
       secretOrKey,
@@ -26,6 +43,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    console.log('✅ JWT Strategy: Token validated successfully');
+    console.log('👤 User payload:', payload);
+    
     return { 
       userId: payload.sub, 
       email: payload.email,
