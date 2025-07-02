@@ -3,18 +3,18 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CalendlyModule } from './calendly/calendly.module';
-import { CalendlyService } from './calendly/calendly.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [ 
     ConfigModule.forRoot({
-      isGlobal:true
+      isGlobal: true
     }),
     AuthModule, 
-    CalendlyModule],
+    CalendlyModule
+  ],
   controllers: [AppController],
   providers: [AppService],
-  exports:[]
+  exports: []
 })
 export class AppModule {}
