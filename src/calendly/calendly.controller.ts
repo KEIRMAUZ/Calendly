@@ -11,6 +11,21 @@ export class CalendlyController {
     private calendlyService: CalendlyService
   ) {}
 
+  // Endpoint de prueba sin autenticación
+  @Get('ping')
+  async ping() {
+    return {
+      message: 'Backend funcionando correctamente',
+      status: 'success',
+      timestamp: new Date().toISOString(),
+      data: {
+        service: 'Calendly API',
+        version: '1.0.0',
+        uptime: process.uptime()
+      }
+    };
+  }
+
   // Endpoint de prueba para verificar autenticación
   @Get('test-auth')
   @UseGuards(AuthGuard('jwt'))
@@ -26,6 +41,34 @@ export class CalendlyController {
           email: req.user.email,
           name: `${req.user.firstName} ${req.user.lastName}`,
           googleId: req.user.sub
+        }
+      }
+    };
+  }
+
+  // Endpoint de diagnóstico para verificar cookies y JWT
+  @Get('debug-auth')
+  async debugAuth(@Request() req: any, @Headers() headers: any) {
+    const cookies = req.cookies || {};
+    const authHeader = headers.authorization;
+    
+    return {
+      message: 'Información de diagnóstico de autenticación',
+      status: 'debug',
+      timestamp: new Date().toISOString(),
+      data: {
+        cookies: {
+          jwt_token: cookies.jwt_token ? 'Presente' : 'Ausente',
+          all_cookies: Object.keys(cookies)
+        },
+        headers: {
+          authorization: authHeader ? 'Presente' : 'Ausente',
+          user_agent: headers['user-agent']?.substring(0, 50) + '...'
+        },
+        request: {
+          method: req.method,
+          url: req.url,
+          ip: req.ip
         }
       }
     };

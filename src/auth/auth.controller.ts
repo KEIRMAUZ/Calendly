@@ -34,12 +34,14 @@ export class AuthController {
       
       console.log('✅ Autenticación exitosa, estableciendo cookie...');
       
-      // Establecer cookie JWT
+      // Establecer cookie JWT con configuración mejorada
       res.cookie('jwt', result.access_token, {
         httpOnly: true,
         secure: false, // Cambiar a true en producción con HTTPS
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 horas
+        path: '/', // Importante: establecer el path
+        domain: 'localhost' // Especificar el dominio
       });
       
       // Redirect to frontend
@@ -128,12 +130,14 @@ export class GoogleCallbackController {
       
       console.log('✅ Autenticación exitosa, estableciendo cookie...');
       
-      // Establecer cookie JWT
+      // Establecer cookie JWT con configuración mejorada
       res.cookie('jwt', result.access_token, {
         httpOnly: true,
         secure: false, // Cambiar a true en producción con HTTPS
         sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000, // 24 horas
+        path: '/', // Importante: establecer el path
+        domain: 'localhost' // Especificar el dominio
       });
       
       // Redirect to frontend
