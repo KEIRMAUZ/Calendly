@@ -1,4 +1,4 @@
-import { Controller, Res, Post, Body, Headers, Query, Get, UseGuards, UnauthorizedException, Request } from '@nestjs/common';
+import { Controller, Res, Post, Body, Headers, Query, Get, UseGuards, UnauthorizedException, Request, Param, Delete } from '@nestjs/common';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { CalendlyService } from './calendly.service';
@@ -242,26 +242,24 @@ export class CalendlyController {
     }
   }
 
-  // Endpoint para crear un evento de prueba (simulado)
+  // Endpoint para crear un evento de prueba
   @Post('events')
   @UseGuards(AuthGuard('jwt'))
-  async createEvent(@Body() eventData: any) {
+  async createEvent(@Request() req: any, @Body() eventData: any) {
     try {
-      // En una implementación real, esto crearía un evento real en Calendly
-      // Por ahora, simulamos la creación
-      const newEvent = {
-        id: `event_${Date.now()}`,
-        ...eventData,
-        created_at: new Date().toISOString(),
-        status: 'active',
-        uri: `https://api.calendly.com/scheduled_events/event_${Date.now()}`
-      };
+      const calendlyAccessToken = this.configService.get('CALENDLY_ACCESS_TOKEN');
+      
+      if (!calendlyAccessToken) {
+        throw new UnauthorizedException('No se encontró token de acceso de Calendly');
+      }
+
+      const result = await this.calendlyService.createTestEvent(eventData);
 
       return {
-        message: 'Evento creado exitosamente (simulado)',
+        message: 'Evento de prueba creado exitosamente',
         status: 'success',
         timestamp: new Date().toISOString(),
-        data: newEvent
+        data: result.data
       };
     } catch (error) {
       console.error('Error creando evento:', error);
@@ -419,6 +417,117 @@ export class CalendlyController {
     
     const accessToken = authHeader.substring(7);
     return await this.calendlyService.getEventAnalytics(accessToken, eventTypeUri, startDate, endDate);
+  }
+
+  @Post('custom-events')
+  @UseGuards(AuthGuard('jwt'))
+  async createCustomEvent(@Request() req: any, @Body() eventData: any) {
+    try {
+      const calendlyAccessToken = this.configService.get('CALENDLY_ACCESS_TOKEN');
+      
+      if (!calendlyAccessToken) {
+        throw new UnauthorizedException('No se encontró token de acceso de Calendly');
+      }
+
+      const result = await this.calendlyService.createCustomEvent(calendlyAccessToken, eventData);
+
+      return {
+        message: 'Evento personalizado creado exitosamente',
+        status: 'success',
+        timestamp: new Date().toISOString(),
+        data: result
+      };
+    } catch (error) {
+      console.error('Error creando evento personalizado:', error);
+      return {
+        message: 'Error al crear evento personalizado',
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        error: error.message
+      };
+    }
+  }
+
+  @Delete('events/:eventId')
+  @UseGuards(AuthGuard('jwt'))
+  async deleteEvent(@Request() req: any, @Param('eventId') eventId: string) {
+    try {
+      const calendlyAccessToken = this.configService.get('CALENDLY_ACCESS_TOKEN');
+      
+      if (!calendlyAccessToken) {
+        throw new UnauthorizedException('No se encontró token de acceso de Calendly');
+      }
+
+      const result = await this.calendlyService.deleteEvent(calendlyAccessToken, eventId);
+
+      return {
+        message: 'Evento eliminado exitosamente',
+        status: 'success',
+        timestamp: new Date().toISOString(),
+        data: result
+      };
+    } catch (error) {
+      console.error('Error eliminando evento:', error);
+      return {
+        message: 'Error al eliminar evento',
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        error: error.message
+      };
+    }
+  }
+
+  // Endpoint para obtener solo eventos de prueba
+  @Get('test-events')
+  @UseGuards(AuthGuard('jwt'))
+  async getTestEvents(@Request() req: any) {
+    try {
+      const testEvents = this.calendlyService.getTestEvents();
+
+      return {
+        message: 'Eventos de prueba obtenidos exitosamente',
+        status: 'success',
+        timestamp: new Date().toISOString(),
+        data: {
+          collection: testEvents,
+          summary: {
+            total_test_events: testEvents.length
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Error obteniendo eventos de prueba:', error);
+      return {
+        message: 'Error al obtener eventos de prueba',
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        error: error.message
+      };
+    }
+  }
+
+  // Endpoint para limpiar eventos de prueba
+  @Delete('test-events')
+  @UseGuards(AuthGuard('jwt'))
+  async clearTestEvents(@Request() req: any) {
+    try {
+      const result = this.calendlyService.clearTestEvents();
+
+      return {
+        message: 'Eventos de prueba eliminados exitosamente',
+        status: 'success',
+        timestamp: new Date().toISOString(),
+        data: result
+      };
+    } catch (error) {
+      console.error('Error eliminando eventos de prueba:', error);
+      return {
+        message: 'Error al eliminar eventos de prueba',
+        status: 'error',
+        timestamp: new Date().toISOString(),
+        error: error.message
+      };
+    }
   }
 }
 
