@@ -74,13 +74,39 @@ export class CalendlyController {
     };
   }
 
+  // Endpoint para verificar configuración de Calendly
+  @Get('config-status')
+  @UseGuards(AuthGuard('jwt'))
+  async getConfigStatus(@Request() req: any) {
+    const calendlyAccessToken = this.configService.get('CALENDLY_ACCESS_TOKEN');
+    const calendlyClientId = this.configService.get('CALENDLY_CLIENT_ID');
+    const calendlyClientSecret = this.configService.get('CALENDLY_CLIENT_SECRET');
+    
+    return {
+      message: 'Estado de configuración de Calendly',
+      status: 'success',
+      timestamp: new Date().toISOString(),
+      data: {
+        calendly: {
+          access_token: calendlyAccessToken ? 'Configurado' : 'No configurado',
+          client_id: calendlyClientId ? 'Configurado' : 'No configurado',
+          client_secret: calendlyClientSecret ? 'Configurado' : 'No configurado',
+          can_connect: !!(calendlyAccessToken && calendlyClientId && calendlyClientSecret)
+        },
+        user: {
+          email: req.user?.email,
+          name: req.user ? `${req.user.firstName} ${req.user.lastName}` : 'No disponible'
+        },
+        test_events: this.calendlyService.getTestEvents().length
+      }
+    };
+  }
+
   // Endpoint para obtener eventos reales de Calendly
   @Get('events')
   @UseGuards(AuthGuard('jwt'))
   async getEvents(@Request() req: any) {
     console.log('🔍 DEBUG: getEvents endpoint called');
-    console.log('📋 Request cookies:', req.cookies);
-    console.log('📋 Request headers:', req.headers);
     console.log('👤 Request user:', req.user);
     
     try {
@@ -92,7 +118,22 @@ export class CalendlyController {
       console.log('🔑 Calendly Access Token present:', !!calendlyAccessToken);
       
       if (!calendlyAccessToken) {
-        throw new UnauthorizedException('No se encontró token de acceso de Calendly. Por favor, configure CALENDLY_ACCESS_TOKEN en las variables de entorno.');
+        console.log('⚠️ No hay token de Calendly configurado');
+        return {
+          message: 'No hay token de Calendly configurado. Por favor, configura CALENDLY_ACCESS_TOKEN en las variables de entorno.',
+          status: 'error',
+          timestamp: new Date().toISOString(),
+          data: {
+            collection: [],
+            summary: {
+              total_events: 0,
+              upcoming_events: 0,
+              past_events: 0,
+              real_events: 0,
+              test_events: 0
+            }
+          }
+        };
       }
 
       // Obtener eventos programados de Calendly

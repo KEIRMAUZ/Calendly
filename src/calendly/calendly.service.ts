@@ -11,7 +11,10 @@ export class CalendlyService {
   constructor(
     private httpService: HttpService, 
     private configService: ConfigService
-  ) {}
+  ) {
+    // No crear eventos de demostración - solo eventos reales
+    console.log('🚀 CalendlyService inicializado - Modo integración real');
+  }
 
   async getAccessToken(code: string): Promise<string> {
     try {
@@ -90,19 +93,57 @@ export class CalendlyService {
 
   async getScheduledEvents(accessToken: string, params?: any) {
     try {
-      // Combinar eventos reales de Calendly con eventos de prueba
+      // Obtener eventos reales de Calendly
       let realEvents = [];
       
       try {
-        const queryParams = new URLSearchParams();
+        // Primero obtener información del usuario para usar en las peticiones
+        console.log('🔍 Obteniendo información del usuario de Calendly...');
         
-        if (params?.count) queryParams.append('count', params.count.toString());
-        if (params?.page_token) queryParams.append('page_token', params.page_token);
-        if (params?.status) queryParams.append('status', params.status);
-        if (params?.min_start_time) queryParams.append('min_start_time', params.min_start_time);
-        if (params?.max_start_time) queryParams.append('max_start_time', params.max_start_time);
+        const userInfoResponse = await firstValueFrom(
+          this.httpService.get('https://api.calendly.com/users/me', {
+            headers: { 
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          })
+        );
 
-        const url = `https://api.calendly.com/scheduled_events${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        const userInfo = userInfoResponse.data;
+        console.log('✅ Información del usuario obtenida:', userInfo);
+        
+        // Construir URL con el URI del usuario
+        const userUri = userInfo.resource?.uri;
+        console.log('🔍 User URI extraído:', userUri);
+        
+        if (!userUri) {
+          throw new Error('No se pudo obtener el URI del usuario de Calendly');
+        }
+        const baseUrl = 'https://api.calendly.com/scheduled_events';
+        
+        // Agregar parámetros de consulta
+        const queryParams = new URLSearchParams();
+        queryParams.append('user', userUri);
+        
+        // Agregar parámetros adicionales si se proporcionan
+        if (params?.count && params.count > 0 && params.count <= 100) {
+          queryParams.append('count', params.count.toString());
+        }
+        if (params?.page_token) {
+          queryParams.append('page_token', params.page_token);
+        }
+        if (params?.status && ['active', 'canceled'].includes(params.status)) {
+          queryParams.append('status', params.status);
+        }
+        if (params?.min_start_time) {
+          queryParams.append('min_start_time', params.min_start_time);
+        }
+        if (params?.max_start_time) {
+          queryParams.append('max_start_time', params.max_start_time);
+        }
+
+        const url = `${baseUrl}?${queryParams.toString()}`;
+        console.log('🔍 URL de petición a Calendly:', url);
         
         const response = await firstValueFrom(
           this.httpService.get(url, {
@@ -114,31 +155,57 @@ export class CalendlyService {
         );
 
         realEvents = response.data.collection || [];
+        console.log(`✅ Eventos reales obtenidos: ${realEvents.length} eventos`);
       } catch (error) {
-        console.log('No se pudieron obtener eventos reales de Calendly, usando solo eventos de prueba');
+        console.error('❌ Error obteniendo eventos reales de Calendly:', {
+          message: error.message,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          details: error.response?.data?.details
+        });
+        
+        // Log detallado de los detalles del error
+        if (error.response?.data?.details) {
+          console.error('🔍 Detalles del error de Calendly:');
+          error.response.data.details.forEach((detail, index) => {
+            console.error(`  ${index + 1}. ${JSON.stringify(detail)}`);
+          });
+        }
+        console.log('🔄 Usando solo eventos de prueba');
+        realEvents = [];
       }
 
-      // Combinar eventos reales con eventos de prueba
-      const allEvents = [...realEvents, ...this.testEvents];
-
-      // Mantener las fechas como ISO strings para que el frontend las formatee
-      const events = allEvents.map(event => ({
+      // Obtener eventos de prueba
+      const testEvents = this.testEvents.map((event: any) => ({
         ...event,
-        // Las fechas se mantienen como ISO strings para formateo en el frontend
+        // Asegurar que las fechas estén en formato ISO
         start_time: event.start_time,
         end_time: event.end_time,
         created_at: event.created_at,
-        updated_at: event.updated_at
+        updated_at: event.updated_at,
+        // Marcar como evento de prueba
+        is_test_event: true
       }));
 
+      console.log(`📊 Eventos de prueba: ${testEvents.length} eventos`);
+
+      // Combinar eventos reales y de prueba
+      const allEvents = [...realEvents, ...testEvents];
+      
+      // Ordenar por fecha de inicio (más recientes primero)
+      allEvents.sort((a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime());
+
+      console.log(`📊 Total de eventos combinados: ${allEvents.length} eventos`);
+
       return {
-        collection: events,
+        collection: allEvents,
         summary: {
-          total_events: events.length,
-          upcoming_events: events.filter(e => new Date(e.start_time) > new Date()).length,
-          past_events: events.filter(e => new Date(e.start_time) <= new Date()).length,
-          test_events: this.testEvents.length,
-          real_events: realEvents.length
+          total_events: allEvents.length,
+          upcoming_events: allEvents.filter(e => new Date(e.start_time) > new Date()).length,
+          past_events: allEvents.filter(e => new Date(e.start_time) <= new Date()).length,
+          real_events: realEvents.length,
+          test_events: testEvents.length
         }
       };
     } catch (error) {
@@ -152,9 +219,24 @@ export class CalendlyService {
 
   async getEventTypes(accessToken: string) {
     try {
+      // First, get the user information to get the user URI
+      const userInfo = await this.getUserInfo(accessToken);
+      console.log('User info for event types:', userInfo);
+      
+      if (!userInfo.resource?.uri) {
+        throw new HttpException(
+          'No se pudo obtener la información del usuario',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      // Extract the user URI
+      const userUri = userInfo.resource.uri;
+      console.log('Using user URI for event types:', userUri);
+
       const response = await firstValueFrom(
         this.httpService.get(
-          'https://api.calendly.com/event_types',
+          `https://api.calendly.com/event_types?user=${encodeURIComponent(userUri)}`,
           {
             headers: { 
               'Authorization': `Bearer ${accessToken}`,
@@ -164,9 +246,13 @@ export class CalendlyService {
         )
       );
 
+      console.log('Event types response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error getting event types:', error);
+      if (error.response) {
+        console.error('Calendly API error details:', error.response.data);
+      }
       throw new HttpException(
         'Failed to get event types from Calendly',
         HttpStatus.INTERNAL_SERVER_ERROR
@@ -271,63 +357,94 @@ export class CalendlyService {
 
   async createCustomEvent(accessToken: string, eventData: any) {
     try {
-      // Crear un evento de prueba en memoria
+      console.log('🔍 Creando evento personalizado con datos:', eventData);
+      
+      // Validar datos requeridos
+      if (!eventData.title || !eventData.startDate) {
+        throw new HttpException(
+          'Título y fecha de inicio son requeridos',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      // Crear un evento personalizado en memoria
       const newEvent = {
-        id: `test_event_${Date.now()}`,
-        uri: `https://api.calendly.com/scheduled_events/test_event_${Date.now()}`,
+        id: `custom_event_${Date.now()}`,
+        uri: `https://api.calendly.com/scheduled_events/custom_event_${Date.now()}`,
         name: eventData.title,
-        description: eventData.description,
+        description: eventData.description || '',
         start_time: eventData.startDate,
-        end_time: eventData.endDate,
-        location: eventData.location,
+        end_time: eventData.endDate || new Date(new Date(eventData.startDate).getTime() + 60 * 60 * 1000).toISOString(),
+        location: eventData.location || 'Sin ubicación',
         attendees: eventData.attendees || [],
-        event_type: eventData.isCustomEvent ? 'Evento Personalizado' : 'Evento de Calendly',
+        event_type: 'Evento Personalizado',
         status: 'active',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         invitee: {
-          email: eventData.attendees?.[0] || 'test@example.com',
-          name: eventData.attendees?.[0] || 'Invitado de Prueba',
+          email: eventData.attendees?.[0] || 'usuario@example.com',
+          name: eventData.attendees?.[0]?.split('@')[0] || 'Usuario',
           timezone: eventData.timezone || 'America/Mexico_City'
         },
-        customData: eventData
+        // Datos adicionales para eventos personalizados
+        customData: {
+          duration: eventData.duration || 60,
+          maxAttendees: eventData.maxAttendees || 1,
+          isCustomEvent: true,
+          ...eventData
+        },
+        // Marcar como evento personalizado
+        is_custom_event: true
       };
 
       // Guardar en memoria
       this.testEvents.push(newEvent);
 
-      console.log('Evento de prueba creado:', newEvent);
+      console.log('✅ Evento personalizado creado exitosamente:', {
+        id: newEvent.id,
+        name: newEvent.name,
+        start_time: newEvent.start_time,
+        attendees: newEvent.attendees.length
+      });
 
       return {
         message: 'Evento personalizado creado exitosamente',
         data: newEvent
       };
     } catch (error) {
-      console.error('Error creating custom event:', error);
+      console.error('❌ Error creating custom event:', error);
       throw new HttpException(
-        'Failed to create custom event',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        error.message || 'Failed to create custom event',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
   }
 
   async deleteEvent(accessToken: string, eventUri: string) {
     try {
-      // Buscar y eliminar eventos de prueba
-      const testEventIndex = this.testEvents.findIndex(event => event.uri === eventUri);
+      console.log('🔍 Intentando eliminar evento:', eventUri);
+      
+      // Buscar y eliminar eventos de prueba/personalizados
+      const testEventIndex = this.testEvents.findIndex(event => 
+        event.uri === eventUri || event.id === eventUri
+      );
       
       if (testEventIndex !== -1) {
         const deletedEvent = this.testEvents.splice(testEventIndex, 1)[0];
-        console.log('Evento de prueba eliminado:', deletedEvent);
+        console.log('✅ Evento personalizado eliminado:', {
+          id: deletedEvent.id,
+          name: deletedEvent.name
+        });
         
         return {
-          message: 'Evento de prueba eliminado exitosamente',
+          message: 'Evento personalizado eliminado exitosamente',
           data: deletedEvent
         };
       }
 
-      // Si no es un evento de prueba, intentar cancelar en Calendly
+      // Si no es un evento personalizado, intentar cancelar en Calendly
       try {
+        console.log('🔄 Intentando cancelar evento en Calendly...');
         const response = await firstValueFrom(
           this.httpService.post(
             `https://api.calendly.com/scheduled_events/${eventUri}/cancellation`,
@@ -343,22 +460,23 @@ export class CalendlyService {
           )
         );
 
+        console.log('✅ Evento de Calendly cancelado exitosamente');
         return {
-          message: 'Evento cancelado exitosamente',
+          message: 'Evento de Calendly cancelado exitosamente',
           data: response.data
         };
       } catch (calendlyError) {
-        console.error('Error cancelando evento en Calendly:', calendlyError);
+        console.error('❌ Error cancelando evento en Calendly:', calendlyError);
         throw new HttpException(
-          'No se pudo eliminar el evento',
+          'No se pudo eliminar el evento de Calendly',
           HttpStatus.INTERNAL_SERVER_ERROR
         );
       }
     } catch (error) {
-      console.error('Error deleting event:', error);
+      console.error('❌ Error deleting event:', error);
       throw new HttpException(
-        'Failed to delete event',
-        HttpStatus.INTERNAL_SERVER_ERROR
+        error.message || 'Failed to delete event',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
   }
