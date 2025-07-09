@@ -2,14 +2,17 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { CalendlyModule } from './calendly/calendly.module';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [ 
     ConfigModule.forRoot({
       isGlobal: true
     }),
+    HttpModule,
     MongooseModule.forRootAsync({
       useFactory: async () => {
         const mongoPassword = process.env.MONGO_PASSWORD;
@@ -22,7 +25,8 @@ import { MongooseModule } from '@nestjs/mongoose';
         };
       },
     }),
-    AuthModule
+    AuthModule,
+    CalendlyModule
   ],
   controllers: [AppController],
   providers: [AppService],
