@@ -21,78 +21,116 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+# Google OAuth Authentication with NestJS
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Este proyecto es una aplicación NestJS que proporciona autenticación con Google OAuth, JWT y conexión a MongoDB.
 
-## Project setup
+## Características
+
+- 🔐 **Autenticación con Google OAuth**: Integración completa con Google OAuth 2.0
+- 🎫 **JWT Tokens**: Generación y validación de tokens JWT
+- 🗄️ **MongoDB**: Conexión a base de datos MongoDB Atlas
+- 🍪 **Cookies seguras**: Manejo de sesiones con cookies HTTP-only
+- 🛡️ **Guards de autenticación**: Protección de rutas con Passport.js
+
+## Configuración
+
+### Variables de entorno
+
+Crea un archivo `.env` basado en `env.example`:
 
 ```bash
-$ npm install
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your_google_client_id_here
+GOOGLE_CLIENT_SECRET=your_google_client_secret_here
+GOOGLE_CALLBACK_URL=http://localhost:3000/google/callback
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret_key_here
+
+# MongoDB Configuration
+MONGO_PASSWORD=your_mongodb_password_here
+MONGO_URI=mongodb+srv://keirmauz:${MONGO_PASSWORD}@cluster0.yvdjajg.mongodb.net/Calendly
+
+# Frontend URL (for OAuth redirects)
+FRONTEND_URL=http://localhost:5173
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
 ```
 
-## Compile and run the project
+### Configuración de Google OAuth
+
+1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
+2. Crea un nuevo proyecto o selecciona uno existente
+3. Habilita la API de Google+ 
+4. Crea credenciales OAuth 2.0
+5. Configura las URLs autorizadas:
+   - `http://localhost:3000/auth/google/callback`
+   - `http://localhost:3000/google/callback`
+
+## Instalación
 
 ```bash
-# development
-$ npm run start
+# Instalar dependencias
+$ npm install
 
-# watch mode
+# Desarrollo
 $ npm run start:dev
 
-# production mode
+# Producción
 $ npm run start:prod
 ```
 
-## Run tests
+## Endpoints
 
-```bash
-# unit tests
-$ npm run test
+### Autenticación
 
-# e2e tests
-$ npm run test:e2e
+- `GET /auth/google` - Iniciar autenticación con Google
+- `GET /auth/google/callback` - Callback de Google OAuth
+- `GET /google/callback` - Callback alternativo
+- `GET /auth/profile` - Obtener perfil del usuario (requiere JWT)
+- `GET /auth/verify` - Verificar token JWT
+- `GET /auth/status` - Verificar estado de autenticación
+- `POST /auth/logout` - Cerrar sesión
 
-# test coverage
-$ npm run test:cov
+### Rutas públicas
+
+- `GET /` - Página principal
+
+## Uso
+
+1. **Iniciar autenticación**: Navega a `http://localhost:3000/auth/google`
+2. **Autenticación automática**: Google redirigirá al usuario y establecerá una cookie JWT
+3. **Verificar estado**: Usa `GET /auth/status` para verificar si el usuario está autenticado
+4. **Acceder a rutas protegidas**: Las rutas con `@UseGuards(AuthGuard('jwt'))` requieren autenticación
+
+## Estructura del proyecto
+
+```
+src/
+├── auth/
+│   ├── auth.controller.ts    # Controlador de autenticación
+│   ├── auth.service.ts       # Servicio de autenticación
+│   ├── auth.module.ts        # Módulo de autenticación
+│   ├── google.strategy.ts    # Estrategia de Google OAuth
+│   └── jwt.strategy.ts       # Estrategia de JWT
+├── app.controller.ts         # Controlador principal
+├── app.service.ts           # Servicio principal
+├── app.module.ts            # Módulo principal
+└── main.ts                  # Punto de entrada
 ```
 
-## Deployment
+## Tecnologías utilizadas
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- [NestJS](https://nestjs.com/) - Framework de Node.js
+- [Passport.js](http://www.passportjs.org/) - Autenticación
+- [JWT](https://jwt.io/) - Tokens de autenticación
+- [MongoDB](https://www.mongodb.com/) - Base de datos
+- [Mongoose](https://mongoosejs.com/) - ODM para MongoDB
+- [Google OAuth 2.0](https://developers.google.com/identity/protocols/oauth2) - Autenticación con Google
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Licencia
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT
