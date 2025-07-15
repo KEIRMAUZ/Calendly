@@ -149,6 +149,13 @@ class ApiService {
     });
   }
 
+  async createOneOnOneEvent(eventData) {
+    return this.request('/calendly/create-oneonone-event', {
+      method: 'POST',
+      body: JSON.stringify(eventData),
+    });
+  }
+
   // Métodos para autenticación
   async getAuthStatus() {
     return this.request('/auth/status');

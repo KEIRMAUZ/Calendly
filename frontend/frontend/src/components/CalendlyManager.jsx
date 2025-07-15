@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import CreateEventForm from './CreateEventForm';
+import CreateOneOnOneEventForm from './CreateOneOnOneEventForm';
 
 const CalendlyManager = () => {
   const { user, isAuthenticated } = useAuth();
@@ -194,80 +195,9 @@ const CalendlyManager = () => {
     }
   };
 
-  const createEvent = async () => {
-    try {
-      if (!eventForm.inviteeName || !eventForm.inviteeEmail || !eventForm.startTime || !eventForm.endTime) {
-        setError('Todos los campos son requeridos');
-        return;
-      }
-
-      setLoading(true);
-      
-      // Preparar datos para el endpoint programático
-      const programmaticEventData = {
-        start_time: eventForm.startTime,
-        end_time: eventForm.endTime,
-        name: eventForm.inviteeName,
-        country: 'MX', // País por defecto
-        email: eventForm.inviteeEmail,
-        notes: `Evento creado desde el gestor: ${eventForm.eventType}`
-      };
-
-      const response = await fetch('/api/calendly/create-event', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(programmaticEventData)
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setError(null);
-        
-        // Limpiar formulario (mantener valores automáticos)
-        setEventForm({
-          eventType: 'Reunión de Consulta',
-          inviteeName: '',
-          inviteeEmail: user?.email || '',
-          startTime: '',
-          endTime: '',
-          status: 'active'
-        });
-        
-        loadEvents(); // Recargar eventos
-        
-        // Manejar redirección automática o con confirmación
-        if (data.data && data.data.schedulingLink) {
-          if (autoRedirect) {
-            // Redirección automática
-            window.open(data.data.schedulingLink, '_blank');
-            alert('✅ Evento creado exitosamente!\n\nEl link de Calendly se ha abierto en una nueva pestaña.');
-          } else {
-            // Confirmación manual
-            const shouldRedirect = window.confirm(
-              '✅ Evento creado exitosamente!\n\n' +
-              '¿Deseas abrir el link de agendado en Calendly?\n\n' +
-              'Link: ' + data.data.schedulingLink
-            );
-            
-            if (shouldRedirect) {
-              window.open(data.data.schedulingLink, '_blank');
-            }
-          }
-        } else {
-          alert('✅ Evento creado exitosamente');
-        }
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError('Error creando evento');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Eliminar el formulario manual de creación de eventos y la función createEvent
+  // Solo dejar el componente <CreateEventForm /> para la creación de eventos programáticos
+  // La lógica de creación de eventos programáticos ahora se maneja a través de CreateEventForm
 
   const loadAccessToken = async () => {
     try {
@@ -399,6 +329,9 @@ const CalendlyManager = () => {
         <CreateEventForm />
       </div>
 
+      {/* Formulario para crear evento one-on-one */}
+      <CreateOneOnOneEventForm />
+
       {/* Webhook Subscriptions Section */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">🔗 Webhook Subscriptions</h2>
@@ -521,108 +454,7 @@ const CalendlyManager = () => {
           </div>
         </div>
 
-        {/* Create Event Form */}
-        <div className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">➕ Crear Nuevo Evento</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Invitado</label>
-              <input
-                type="text"
-                value={eventForm.inviteeName}
-                onChange={(e) => setEventForm({...eventForm, inviteeName: e.target.value})}
-                placeholder="Nombre completo"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email del Invitado</label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="email"
-                  value={eventForm.inviteeEmail}
-                  onChange={(e) => setEventForm({...eventForm, inviteeEmail: e.target.value})}
-                  placeholder="email@ejemplo.com"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {user && user.email && (
-                  <div className="flex items-center space-x-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-xs text-green-600">Auto</span>
-                  </div>
-                )}
-              </div>
-              {user && user.email && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Email cargado automáticamente desde tu cuenta de Google
-                </p>
-              )}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora de Inicio</label>
-              <input
-                type="datetime-local"
-                value={eventForm.startTime}
-                onChange={(e) => setEventForm({...eventForm, startTime: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora de Fin</label>
-              <input
-                type="datetime-local"
-                value={eventForm.endTime}
-                onChange={(e) => setEventForm({...eventForm, endTime: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-          
-          {/* Información automática */}
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-            <div className="flex items-center space-x-2 mb-2">
-              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-sm font-medium text-blue-800">Configuración Automática</span>
-            </div>
-            <div className="text-xs text-blue-700 space-y-1">
-              <p>• Tipo de evento: <span className="font-medium">Reunión de Consulta</span></p>
-              <p>• Estado: <span className="font-medium">Activo</span></p>
-              {user && user.email && (
-                <p>• Email: <span className="font-medium">{user.email}</span></p>
-              )}
-            </div>
-          </div>
-          
-          {/* Opción de redirección automática */}
-          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
-            <div className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                id="autoRedirect"
-                checked={autoRedirect}
-                onChange={(e) => setAutoRedirect(e.target.checked)}
-                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-              />
-              <label htmlFor="autoRedirect" className="text-sm font-medium text-green-800">
-                🔗 Abrir link de Calendly automáticamente
-              </label>
-            </div>
-            <p className="text-xs text-green-700 mt-1 ml-7">
-              Cuando esté activado, el link de agendado se abrirá automáticamente en una nueva pestaña
-            </p>
-          </div>
-          
-          <button
-            onClick={createEvent}
-            disabled={loading}
-            className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400"
-          >
-            {loading ? 'Creando...' : 'Crear Evento'}
-          </button>
-        </div>
-        
+        {/* Eliminar el formulario manual, solo mostrar el historial de eventos */}
         {events.length === 0 ? (
           <p className="text-gray-500">No hay eventos registrados</p>
         ) : (
