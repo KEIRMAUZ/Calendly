@@ -76,6 +76,12 @@ export class Event {
 
   @Prop({ type: Object })
   webhookPayload: any;
+
+  @Prop()
+  schedulingLink: string;
+
+  @Prop()
+  country: string;
 }
 
 export const EventSchema = SchemaFactory.createForClass(Event); 

@@ -5,6 +5,12 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { firstValueFrom } from 'rxjs';
 import { Event, EventDocument } from './schemas/event.schema';
+import { CreateEventDto } from './dto/create-event.dto';
+import { 
+  CalendlyEventTypesResponse, 
+  CalendlyAvailableTimesResponse, 
+  CalendlySchedulingLinkResponse 
+} from './dto/calendly-response.dto';
 
 @Injectable()
 export class CalendlyService {
@@ -93,6 +99,37 @@ export class CalendlyService {
       console.error('❌ Error eliminando webhook subscription:', error);
       throw new HttpException(
         'Error eliminando webhook subscription',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async deleteWebhookSubscriptionById(accessToken: string, webhookUuid: string) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.delete(
+          `https://api.calendly.com/webhook_subscriptions/${webhookUuid}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+      );
+
+      console.log('✅ Webhook subscription eliminado por UUID:', webhookUuid);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Error eliminando webhook subscription por UUID:', error);
+      
+      // Log detallado del error
+      if (error.response?.data) {
+        console.error('📋 Detalles del error:', JSON.stringify(error.response.data, null, 2));
+      }
+      
+      throw new HttpException(
+        `Error eliminando webhook subscription: ${error.response?.data?.message || error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
@@ -487,6 +524,357 @@ export class CalendlyService {
       console.error('❌ Error creando evento manualmente:', error);
       throw new HttpException(
         'Error creando evento',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  // ===== PROGRAMMATIC EVENT CREATION =====
+
+  async createProgrammaticEvent(eventData: CreateEventDto, userEmail: string) {
+    try {
+      console.log('🎯 Creando evento programático:', { eventData, userEmail });
+
+      // Obtener el token de acceso de Calendly
+      const accessToken = this.configService.get('CALENDLY_ACCESS_TOKEN');
+      if (!accessToken) {
+        throw new HttpException(
+          'Token de acceso de Calendly no configurado',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      // 1. Obtener los tipos de eventos disponibles
+      let eventTypes = await this.getEventTypes(accessToken);
+      
+      // Si no hay tipos de eventos, crear uno por defecto
+      if (!eventTypes || eventTypes.length === 0) {
+        console.log('📝 No se encontraron tipos de eventos, creando uno por defecto...');
+        const defaultEventType = await this.createDefaultEventType(accessToken, userEmail);
+        eventTypes = [defaultEventType];
+      }
+
+      // Seleccionar el mejor tipo de evento disponible
+      // Priorizar eventos activos, de tipo estándar y con duración razonable
+      const selectedEventType = this.selectBestEventType(eventTypes);
+      console.log('📅 Tipo de evento seleccionado:', selectedEventType.name);
+
+      // 2. Verificar disponibilidad de horarios (opcional para eventos recién creados)
+      let availableTimes: any[] = [];
+      try {
+        availableTimes = await this.getAvailableTimes(
+          accessToken,
+          selectedEventType.uri,
+          eventData.start_time,
+          eventData.end_time
+        );
+        
+        if (!availableTimes || availableTimes.length === 0) {
+          console.log('⚠️ No hay horarios disponibles, pero continuando con la creación del link...');
+        }
+      } catch (error) {
+        console.log('⚠️ Error verificando disponibilidad, pero continuando con la creación del link...');
+        // Continuar sin verificar disponibilidad para eventos recién creados
+      }
+
+      // 3. Crear link de agendado single-use
+      const schedulingLink = await this.createSchedulingLink(
+        accessToken,
+        selectedEventType.uri
+      );
+
+      // 4. Guardar información del evento en la base de datos
+      const eventInfo = {
+        calendlyEventId: `programmatic_${Date.now()}`,
+        eventType: selectedEventType.name,
+        startTime: new Date(eventData.start_time),
+        endTime: new Date(eventData.end_time),
+        inviteeEmail: eventData.email || userEmail,
+        inviteeName: eventData.name,
+        inviteePhone: eventData.phone,
+        organizerEmail: userEmail,
+        organizerName: 'Organizador',
+        location: 'Virtual',
+        description: eventData.notes || 'Evento creado programáticamente',
+        status: 'pending',
+        calendlyUri: selectedEventType.uri,
+        eventTypeUri: selectedEventType.uri,
+        schedulingLink: schedulingLink.booking_url,
+        country: eventData.country,
+        calendlyData: {
+          eventType: selectedEventType,
+          availableTimes: availableTimes,
+          schedulingLink: schedulingLink
+        },
+        webhookType: 'programmatic.created',
+        webhookProcessed: true,
+        webhookProcessedAt: new Date()
+      };
+
+      const savedEvent = await this.createEvent(eventInfo);
+
+      console.log('✅ Evento programático creado exitosamente');
+      
+      return {
+        success: true,
+        event: savedEvent,
+        schedulingLink: schedulingLink.booking_url,
+        message: 'Evento creado exitosamente. Use el link para agendar la cita.'
+      };
+
+    } catch (error) {
+      console.error('❌ Error creando evento programático:', error);
+      throw new HttpException(
+        error.message || 'Error creando evento programático',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  private async getEventTypes(accessToken: string): Promise<any[]> {
+    try {
+      // Primero necesitamos obtener la información del usuario para obtener su URI
+      const userInfo = await this.getUserInfo(accessToken);
+      const userUri = userInfo.resource?.uri;
+      
+      if (!userUri) {
+        throw new HttpException(
+          'No se pudo obtener el URI del usuario de Calendly',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      console.log('👤 URI del usuario de Calendly:', userUri);
+
+      const response = await firstValueFrom(
+        this.httpService.get<CalendlyEventTypesResponse>(
+          'https://api.calendly.com/event_types',
+          {
+            params: {
+              user: userUri,
+              active: true, // Solo eventos activos
+              count: 100 // Máximo número de eventos
+            },
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+      );
+
+      console.log('📅 Tipos de eventos obtenidos:', response.data.collection?.length || 0);
+      return response.data.collection || [];
+    } catch (error) {
+      console.error('❌ Error obteniendo tipos de eventos:', error);
+      throw new HttpException(
+        'Error obteniendo tipos de eventos de Calendly',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  private async getAvailableTimes(
+    accessToken: string,
+    eventTypeUri: string,
+    startTime: string,
+    endTime: string
+  ): Promise<any[]> {
+    try {
+      // Convertir fechas a formato ISO completo si no lo están
+      const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) {
+          throw new Error('Formato de fecha inválido');
+        }
+        return date.toISOString();
+      };
+
+      const formattedStartTime = formatDate(startTime);
+      const formattedEndTime = formatDate(endTime);
+
+      // Verificar que el rango no sea mayor a 7 días
+      const startDate = new Date(formattedStartTime);
+      const endDate = new Date(formattedEndTime);
+      const daysDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+      
+      if (daysDiff > 7) {
+        console.log('⚠️ Rango de fechas mayor a 7 días, ajustando...');
+        // Ajustar a 7 días desde la fecha de inicio
+        const adjustedEndDate = new Date(startDate.getTime() + (7 * 24 * 60 * 60 * 1000));
+        endTime = adjustedEndDate.toISOString();
+      }
+
+      console.log('📅 Consultando disponibilidad:', {
+        event_type: eventTypeUri,
+        start_time: formattedStartTime,
+        end_time: endTime
+      });
+
+      const response = await firstValueFrom(
+        this.httpService.get<CalendlyAvailableTimesResponse>(
+          'https://api.calendly.com/event_type_available_times',
+          {
+            params: {
+              event_type: eventTypeUri,
+              start_time: formattedStartTime,
+              end_time: endTime
+            },
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+      );
+
+      console.log('✅ Horarios disponibles obtenidos:', response.data.collection?.length || 0);
+      return response.data.collection || [];
+    } catch (error) {
+      console.error('❌ Error obteniendo horarios disponibles:', error);
+      
+      // Log detallado del error
+      if (error.response?.data) {
+        console.error('📋 Detalles del error:', JSON.stringify(error.response.data, null, 2));
+      }
+      
+      throw new HttpException(
+        'Error obteniendo horarios disponibles de Calendly',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  private async createSchedulingLink(
+    accessToken: string,
+    eventTypeUri: string
+  ): Promise<any> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post<CalendlySchedulingLinkResponse>(
+          'https://api.calendly.com/scheduling_links',
+          {
+            max_event_count: 1,
+            owner: eventTypeUri,
+            owner_type: 'EventType'
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+      );
+
+      return response.data.resource;
+    } catch (error) {
+      console.error('❌ Error creando link de agendado:', error);
+      throw new HttpException(
+        'Error creando link de agendado en Calendly',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  private selectBestEventType(eventTypes: any[]): any {
+    if (!eventTypes || eventTypes.length === 0) {
+      throw new HttpException(
+        'No hay tipos de eventos disponibles',
+        HttpStatus.NOT_FOUND
+      );
+    }
+
+    // Filtrar eventos activos y de tipo estándar
+    const validEventTypes = eventTypes.filter(event => 
+      event.active && 
+      event.type === 'StandardEventType' &&
+      event.kind === 'solo' // Preferir eventos one-on-one (1 host, 1 invitado)
+    );
+
+    if (validEventTypes.length === 0) {
+      // Si no hay eventos estándar, usar cualquier evento activo
+      const activeEvents = eventTypes.filter(event => event.active);
+      if (activeEvents.length === 0) {
+        // Si no hay eventos activos, usar el primero disponible
+        return eventTypes[0];
+      }
+      return activeEvents[0];
+    }
+
+    // Priorizar eventos con duración entre 15 y 60 minutos
+    const preferredEvents = validEventTypes.filter(event => 
+      event.duration >= 15 && event.duration <= 60
+    );
+
+    if (preferredEvents.length > 0) {
+      // Ordenar por duración (preferir eventos más cortos)
+      preferredEvents.sort((a, b) => a.duration - b.duration);
+      return preferredEvents[0];
+    }
+
+    // Si no hay eventos preferidos, usar el primer evento válido
+    return validEventTypes[0];
+  }
+
+  private async createDefaultEventType(accessToken: string, userEmail: string): Promise<any> {
+    try {
+      console.log('🔧 Creando tipo de evento por defecto...');
+
+      // Obtener información del usuario para el owner
+      const userInfo = await this.getUserInfo(accessToken);
+      const userUri = userInfo.resource?.uri;
+
+      if (!userUri) {
+        throw new HttpException(
+          'No se pudo obtener el URI del usuario de Calendly',
+          HttpStatus.INTERNAL_SERVER_ERROR
+        );
+      }
+
+      const defaultEventTypeData = {
+        owner: userUri,
+        name: 'Consulta One-on-One',
+        description: 'Consulta individual de 30 minutos',
+        duration: 30,
+        // Configuración para evento one-on-one (1 host, 1 invitado)
+        kind: 'solo', // Indica que es un evento individual
+        type: 'StandardEventType', // Tipo estándar
+        active: true, // Activo por defecto
+        color: '#3B82F6' // Color azul
+      };
+
+      console.log('📤 Datos enviados para crear evento:', JSON.stringify(defaultEventTypeData, null, 2));
+
+      const response = await firstValueFrom(
+        this.httpService.post(
+          'https://api.calendly.com/event_types',
+          defaultEventTypeData,
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+      );
+
+      console.log('✅ Tipo de evento por defecto creado:', response.data.resource.name);
+      return response.data.resource;
+    } catch (error) {
+      console.error('❌ Error creando tipo de evento por defecto:', error);
+      
+      // Log detallado del error
+      if (error.response?.data) {
+        console.error('📋 Detalles del error:', JSON.stringify(error.response.data, null, 2));
+      }
+      
+      if (error.response?.status) {
+        console.error('📊 Status code:', error.response.status);
+      }
+      
+      throw new HttpException(
+        `Error creando tipo de evento por defecto: ${error.response?.data?.message || error.message}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import CreateEventForm from './CreateEventForm';
 
 const CalendlyManager = () => {
   const { user, isAuthenticated } = useAuth();
@@ -27,6 +28,9 @@ const CalendlyManager = () => {
     endTime: '',
     status: 'active' // Siempre activo
   });
+
+  // Estado para controlar redirección automática
+  const [autoRedirect, setAutoRedirect] = useState(true);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -145,8 +149,14 @@ const CalendlyManager = () => {
       }
 
       setLoading(true);
-      const response = await fetch(`/api/calendly/webhook-subscriptions/${encodeURIComponent(subscriptionUri)}/delete?token=${accessToken}`, {
-        method: 'POST'
+      
+      // Extraer UUID del URI si es necesario
+      const webhookUuid = subscriptionUri.includes('/webhook_subscriptions/') 
+        ? subscriptionUri.split('/webhook_subscriptions/')[1]
+        : subscriptionUri;
+
+      const response = await fetch(`/api/calendly/webhook-subscriptions/${webhookUuid}?token=${accessToken}`, {
+        method: 'DELETE'
       });
       
       const data = await response.json();
@@ -192,18 +202,30 @@ const CalendlyManager = () => {
       }
 
       setLoading(true);
-      const response = await fetch('/api/calendly/events', {
+      
+      // Preparar datos para el endpoint programático
+      const programmaticEventData = {
+        start_time: eventForm.startTime,
+        end_time: eventForm.endTime,
+        name: eventForm.inviteeName,
+        country: 'MX', // País por defecto
+        email: eventForm.inviteeEmail,
+        notes: `Evento creado desde el gestor: ${eventForm.eventType}`
+      };
+
+      const response = await fetch('/api/calendly/create-event', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(eventForm)
+        body: JSON.stringify(programmaticEventData)
       });
       
       const data = await response.json();
       
       if (data.success) {
         setError(null);
+        
         // Limpiar formulario (mantener valores automáticos)
         setEventForm({
           eventType: 'Reunión de Consulta',
@@ -213,8 +235,30 @@ const CalendlyManager = () => {
           endTime: '',
           status: 'active'
         });
+        
         loadEvents(); // Recargar eventos
-        alert('Evento creado exitosamente');
+        
+        // Manejar redirección automática o con confirmación
+        if (data.data && data.data.schedulingLink) {
+          if (autoRedirect) {
+            // Redirección automática
+            window.open(data.data.schedulingLink, '_blank');
+            alert('✅ Evento creado exitosamente!\n\nEl link de Calendly se ha abierto en una nueva pestaña.');
+          } else {
+            // Confirmación manual
+            const shouldRedirect = window.confirm(
+              '✅ Evento creado exitosamente!\n\n' +
+              '¿Deseas abrir el link de agendado en Calendly?\n\n' +
+              'Link: ' + data.data.schedulingLink
+            );
+            
+            if (shouldRedirect) {
+              window.open(data.data.schedulingLink, '_blank');
+            }
+          }
+        } else {
+          alert('✅ Evento creado exitosamente');
+        }
       } else {
         setError(data.error);
       }
@@ -346,6 +390,14 @@ const CalendlyManager = () => {
           </div>
         </div>
       )}
+
+      {/* Programmatic Event Creation Section */}
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">🎯 Crear Evento Programático</h2>
+        </div>
+        <CreateEventForm />
+      </div>
 
       {/* Webhook Subscriptions Section */}
       <div className="bg-white rounded-lg shadow p-6 mb-8">
@@ -541,6 +593,25 @@ const CalendlyManager = () => {
                 <p>• Email: <span className="font-medium">{user.email}</span></p>
               )}
             </div>
+          </div>
+          
+          {/* Opción de redirección automática */}
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                id="autoRedirect"
+                checked={autoRedirect}
+                onChange={(e) => setAutoRedirect(e.target.checked)}
+                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+              />
+              <label htmlFor="autoRedirect" className="text-sm font-medium text-green-800">
+                🔗 Abrir link de Calendly automáticamente
+              </label>
+            </div>
+            <p className="text-xs text-green-700 mt-1 ml-7">
+              Cuando esté activado, el link de agendado se abrirá automáticamente en una nueva pestaña
+            </p>
           </div>
           
           <button

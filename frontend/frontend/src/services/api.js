@@ -83,4 +83,82 @@ export const testService = {
   },
 };
 
-export default api; 
+const API_BASE_URL = '/api';
+
+class ApiService {
+  constructor() {
+    this.baseURL = API_BASE_URL;
+  }
+
+  async request(endpoint, options = {}) {
+    const url = `${this.baseURL}${endpoint}`;
+    
+    const defaultOptions = {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Incluir cookies para autenticación
+    };
+
+    const config = {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...options.headers,
+      },
+    };
+
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
+    }
+  }
+
+  // Métodos para Calendly
+  async createProgrammaticEvent(eventData) {
+    return this.request('/calendly/create-event', {
+      method: 'POST',
+      body: JSON.stringify(eventData),
+    });
+  }
+
+  async getEvents() {
+    return this.request('/calendly/events');
+  }
+
+  async getEventStats() {
+    return this.request('/calendly/stats');
+  }
+
+  async testWebhook() {
+    return this.request('/calendly/test-webhook');
+  }
+
+  async deleteWebhookSubscription(webhookUuid, accessToken) {
+    return this.request(`/calendly/webhook-subscriptions/${webhookUuid}?token=${accessToken}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Métodos para autenticación
+  async getAuthStatus() {
+    return this.request('/auth/status');
+  }
+
+  async logout() {
+    return this.request('/auth/logout', {
+      method: 'POST',
+    });
+  }
+}
+
+export default new ApiService(); 

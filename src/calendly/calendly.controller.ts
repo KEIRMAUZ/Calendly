@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Param, Query, Req, Res, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, Req, Res, HttpStatus, UseGuards } from '@nestjs/common';
 import { CalendlyService } from './calendly.service';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
+import { AuthGuard } from '@nestjs/passport';
+import { CreateEventDto } from './dto/create-event.dto';
 
 @Controller('calendly')
 export class CalendlyController {
@@ -100,6 +102,33 @@ export class CalendlyController {
       };
     } catch (error) {
       console.error('❌ Error eliminando webhook subscription:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  @Delete('webhook-subscriptions/:webhookUuid')
+  async deleteWebhookSubscriptionById(
+    @Param('webhookUuid') webhookUuid: string,
+    @Query('token') accessToken: string
+  ) {
+    try {
+      if (!accessToken) {
+        throw new Error('Access token requerido');
+      }
+
+      console.log('🗑️ Eliminando webhook subscription por UUID:', webhookUuid);
+
+      const result = await this.calendlyService.deleteWebhookSubscriptionById(accessToken, webhookUuid);
+      return {
+        success: true,
+        data: result,
+        message: 'Webhook subscription eliminado exitosamente'
+      };
+    } catch (error) {
+      console.error('❌ Error eliminando webhook subscription por UUID:', error);
       return {
         success: false,
         error: error.message
@@ -333,6 +362,41 @@ export class CalendlyController {
       return {
         success: false,
         error: error.message
+      };
+    }
+  }
+
+  // ===== PROGRAMMATIC EVENT CREATION =====
+
+  @Post('create-event')
+  @UseGuards(AuthGuard('jwt'))
+  async createProgrammaticEvent(@Body() eventData: CreateEventDto, @Req() req: Request) {
+    try {
+      console.log('🎯 Endpoint create-event llamado:', eventData);
+      
+      // Obtener el email del usuario autenticado
+      const userEmail = (req.user as any)?.email;
+      if (!userEmail) {
+        return {
+          success: false,
+          error: 'Usuario no autenticado o email no disponible'
+        };
+      }
+
+      console.log('👤 Usuario autenticado:', userEmail);
+
+      const result = await this.calendlyService.createProgrammaticEvent(eventData, userEmail);
+      
+      return {
+        success: true,
+        data: result,
+        message: 'Evento creado exitosamente'
+      };
+    } catch (error) {
+      console.error('❌ Error creando evento programático:', error);
+      return {
+        success: false,
+        error: error.message || 'Error interno del servidor'
       };
     }
   }
