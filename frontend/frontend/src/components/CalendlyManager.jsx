@@ -14,7 +14,7 @@ const CalendlyManager = () => {
 
   // Estados para formularios
   const [webhookForm, setWebhookForm] = useState({
-    url: 'http://localhost:3000/calendly/webhook',
+    url: 'https://calendly-18rn.onrender.com/calendly/webhook',
     events: ['invitee.created', 'invitee.canceled'],
     organization: '',
     scope: 'organization'
@@ -54,7 +54,7 @@ const CalendlyManager = () => {
   const loadStats = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/calendly/stats');
+      const response = await fetch('https://calendly-18rn.onrender.com/calendly/stats');
       const data = await response.json();
       
       if (data.success) {
@@ -72,7 +72,7 @@ const CalendlyManager = () => {
   const loadEvents = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/calendly/events');
+      const response = await fetch('https://calendly-18rn.onrender.com/calendly/events');
       const data = await response.json();
       
       if (data.success) {
@@ -95,7 +95,7 @@ const CalendlyManager = () => {
       }
 
       setLoading(true);
-      const response = await fetch(`/api/calendly/webhook-subscriptions?token=${accessToken}`);
+      const response = await fetch(`https://calendly-18rn.onrender.com/calendly/webhook-subscriptions?token=${accessToken}`);
       const data = await response.json();
       
       if (data.success) {
@@ -118,7 +118,7 @@ const CalendlyManager = () => {
       }
 
       setLoading(true);
-      const response = await fetch(`/api/calendly/webhook-subscriptions?token=${accessToken}`, {
+      const response = await fetch(`https://calendly-18rn.onrender.com/calendly/webhook-subscriptions?token=${accessToken}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -156,7 +156,7 @@ const CalendlyManager = () => {
         ? subscriptionUri.split('/webhook_subscriptions/')[1]
         : subscriptionUri;
 
-      const response = await fetch(`/api/calendly/webhook-subscriptions/${webhookUuid}?token=${accessToken}`, {
+      const response = await fetch(`https://calendly-18rn.onrender.com/calendly/webhook-subscriptions/${webhookUuid}?token=${accessToken}`, {
         method: 'DELETE'
       });
       
@@ -179,7 +179,7 @@ const CalendlyManager = () => {
   const testWebhook = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/calendly/test-webhook');
+      const response = await fetch('https://calendly-18rn.onrender.com/calendly/test-webhook');
       const data = await response.json();
       
       if (data.success) {
@@ -201,7 +201,7 @@ const CalendlyManager = () => {
 
   const loadAccessToken = async () => {
     try {
-      const response = await fetch('/api/calendly/access-token');
+      const response = await fetch('https://calendly-18rn.onrender.com/calendly/access-token');
       const data = await response.json();
       
       if (data.success && data.data.accessToken) {

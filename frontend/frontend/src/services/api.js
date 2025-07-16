@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Configuración base de axios
 const api = axios.create({
-  baseURL: '/api', // Usa el proxy configurado en vite
+  baseURL: 'https://calendly-18rn.onrender.com', // Sin /api
   withCredentials: true, // Importante para las cookies
   headers: {
     'Content-Type': 'application/json',
@@ -22,7 +22,7 @@ api.interceptors.response.use(
 export const authService = {
   // Iniciar autenticación con Google
   loginWithGoogle: () => {
-    window.location.href = '/api/auth/google';
+    window.location.href = 'https://calendly-18rn.onrender.com/auth/google';
   },
 
   // Verificar estado de autenticación
@@ -83,7 +83,7 @@ export const testService = {
   },
 };
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'https://calendly-18rn.onrender.com';
 
 class ApiService {
   constructor() {
@@ -92,14 +92,12 @@ class ApiService {
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    
     const defaultOptions = {
       headers: {
         'Content-Type': 'application/json',
       },
       credentials: 'include', // Incluir cookies para autenticación
     };
-
     const config = {
       ...defaultOptions,
       ...options,
@@ -108,14 +106,11 @@ class ApiService {
         ...options.headers,
       },
     };
-
     try {
       const response = await fetch(url, config);
-      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
       return await response.json();
     } catch (error) {
       console.error('API request failed:', error);
