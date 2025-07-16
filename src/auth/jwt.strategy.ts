@@ -5,51 +5,27 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private configService: ConfigService) {
-    const secretOrKey = configService.get<string>('JWT_SECRET', 'your-secret-key');
-    
+  constructor(configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-
+        (request) => request?.cookies?.jwt || null,
         (request) => {
-          console.log('🔍 JWT Strategy: Checking cookies...');
-          console.log('📋 Request cookies:', request?.cookies);
-          
-          if (request && request.cookies) {
-            const token = request.cookies['jwt'];
-            console.log('🍪 JWT Token from cookie:', token ? 'Presente' : 'Ausente');
-            return token;
-          }
-          console.log('❌ No cookies found in request');
-          return null;
-        },
-        (request) => {
-          console.log('🔍 JWT Strategy: Checking Authorization header...');
           const authHeader = request?.headers?.authorization;
-          console.log('📋 Authorization header:', authHeader ? 'Presente' : 'Ausente');
-          
-          if (authHeader && authHeader.startsWith('Bearer ')) {
-            const token = authHeader.substring(7);
-            console.log('🔑 JWT Token from header:', token ? 'Presente' : 'Ausente');
-            return token;
-          }
-          return null;
+          return authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey,
+      secretOrKey: configService.get<string>('JWT_SECRET', 'your-secret-key'),
     });
   }
 
   async validate(payload: any) {
-    
-    
-    return { 
-      userId: payload.sub, 
+    return {
+      userId: payload.sub,
       email: payload.email,
       firstName: payload.firstName,
       lastName: payload.lastName,
-      picture: payload.picture
+      picture: payload.picture,
     };
   }
-} 
+}

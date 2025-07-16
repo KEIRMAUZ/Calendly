@@ -10,6 +10,8 @@ async function bootstrap() {
     origin: [
       'http://localhost:5173', // Puerto por defecto de Vite
       'http://127.0.0.1:5173', // Alternativa localhost
+      'http://localhost:5174', // Puerto alternativo de Vite
+      'http://127.0.0.1:5174', // Alternativa localhost
       'http://localhost:4173', // Puerto de preview de Vite
       'http://127.0.0.1:4173', // Alternativa preview
     ],
@@ -29,8 +31,5 @@ async function bootstrap() {
   app.use(cookieParser());
 
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`🚀 Backend running on port ${process.env.PORT ?? 3000}`);
-  console.log(`📱 Frontend should be running on http://localhost:5173`);
-  console.log(`🔐 Google Auth available at http://localhost:3000/auth/google`);
 }
 bootstrap();
