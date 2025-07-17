@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CalendlyModule } from './calendly/calendly.module';
 import { ContactModule } from './contact/contact.module';
+import { EmailModule } from './email/email.module';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { HttpModule } from '@nestjs/axios';
@@ -28,7 +29,8 @@ import { HttpModule } from '@nestjs/axios';
     }),
     AuthModule,
     CalendlyModule,
-    ContactModule
+    ContactModule,
+    EmailModule
   ],
   controllers: [AppController],
   providers: [AppService],

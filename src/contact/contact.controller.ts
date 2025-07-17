@@ -11,15 +11,36 @@ import {
 } from '@nestjs/common';
 import { ContactService } from './contact.service';
 import { CreateContactDto } from './dto/create-contact.dto';
+import { EmailService } from '../email/email.service';
 
 @Controller('api/contact')
 export class ContactController {
-  constructor(private readonly contactService: ContactService) {}
+  constructor(
+    private readonly contactService: ContactService,
+    private readonly emailService: EmailService
+  ) {}
 
   @Post()
   async create(@Body() createContactDto: CreateContactDto) {
     try {
+      // Guardar el contacto en MongoDB
       const contact = await this.contactService.create(createContactDto);
+      
+      // Enviar email de confirmación al usuario
+      await this.emailService.sendContactConfirmation({
+        name: contact.name,
+        email: contact.email,
+        destination: contact.destination,
+        message: contact.message
+      });
+      
+      // Enviar notificación al administrador
+      await this.emailService.sendAdminNotification({
+        name: contact.name,
+        email: contact.email,
+        destination: contact.destination,
+        message: contact.message
+      });
       
       return {
         success: true,
@@ -51,6 +72,15 @@ export class ContactController {
           calendlyInviteeUri: 'calendly-registration'
         }
       );
+
+      // Enviar email de activación
+      await this.emailService.sendActivationEmail({
+        name: updatedContact.name,
+        email: updatedContact.email,
+        destination: updatedContact.destination,
+        calendlyEventType: updatedContact.calendlyEventType,
+        calendlyStartTime: updatedContact.calendlyStartTime
+      });
 
       return {
         success: true,
