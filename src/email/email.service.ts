@@ -79,7 +79,7 @@ export class EmailService {
       const emailParams = new EmailParams()
         .setFrom(sentFrom)
         .setTo(recipients)
-        .setReplyTo(new Sender(contactData.email, contactData.name))
+        .setReplyTo(sentFrom) // Usar el mismo email verificado
         .setSubject(`Nuevo contacto recibido - ${contactData.destination}`)
         .setHtml(this.generateAdminNotificationHTML(contactData))
         .setText(this.generateAdminNotificationText(contactData));
