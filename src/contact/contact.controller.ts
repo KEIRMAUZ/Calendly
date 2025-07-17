@@ -21,7 +21,7 @@ export class ContactController {
   @Post()
   async create(@Body() createContactDto: CreateContactDto) {
     try {
-      // Guardar el contacto en MongoDB
+      
       const contact = await this.contactService.create(createContactDto);
       
       return {
