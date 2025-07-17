@@ -29,7 +29,7 @@ export class EmailService {
   }): Promise<boolean> {
     try {
       const sentFrom = new Sender(
-        'noreply@test-xkjn41m74781.mlsender.net', // Dominio de prueba verificado
+        'kevinmanuelarteagaruiz@gmail.com', // Email personal verificado
         'VIAJES UTSH'
       );
 
@@ -66,11 +66,11 @@ export class EmailService {
   }): Promise<boolean> {
     try {
       const sentFrom = new Sender(
-        'noreply@test-xkjn41m74781.mlsender.net', // Dominio de prueba verificado
+        'kevinmanuelarteagaruiz@gmail.com', // Email personal verificado
         'VIAJES UTSH - Sistema de Notificaciones'
       );
 
-      const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || 'admin@viajesutsh.com';
+      const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || 'kevinmanuelarteagaruiz@gmail.com';
       
       const recipients = [
         new Recipient(adminEmail, 'Administrador ViajesUtsh')
@@ -106,7 +106,7 @@ export class EmailService {
   }): Promise<boolean> {
     try {
       const sentFrom = new Sender(
-        'noreply@test-xkjn41m74781.mlsender.net', // Dominio de prueba verificado
+        'kevinmanuelarteagaruiz@gmail.com', // Email personal verificado
         'VIAJES UTSH'
       );
 
@@ -138,7 +138,7 @@ export class EmailService {
   async sendCustomEmail(to: string, toName: string, subject: string, htmlContent: string, textContent?: string): Promise<boolean> {
     try {
       const sentFrom = new Sender(
-        'noreply@test-xkjn41m74781.mlsender.net', // Dominio de prueba verificado
+        'kevinmanuelarteagaruiz@gmail.com', // Email personal verificado
         'VIAJES UTSH'
       );
 
