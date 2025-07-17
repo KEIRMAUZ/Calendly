@@ -26,7 +26,7 @@ export class ContactService {
         // testInboxId: 3901100, // Opcional, si tienes un inbox de test
       });
       const sender = {
-        email: 'hello@example.com',
+        email: 'kevinmanuelarteagaruiz@gmail.com',
         name: 'Mailtrap Test',
       };
       const recipients = [
