@@ -23,22 +23,32 @@ export class ContactService {
       if (!TOKEN) throw new Error('API_TOKEN_MAIL is not set in environment variables');
       const client = new MailtrapClient({ token: TOKEN });
       const sender = {
-        email: 'kevinmanuelarteagaruiz@gmail.com',
+        email: 'hi@demomailtrap.co', // <-- Usa un dominio de Mailtrap autorizado
         name: 'UTSH Viajes',
       };
       const recipients = [
         {
-          email: savedContact.email,
+          email: 'kevinmanuelarteagaruiz@gmail.com', // <-- Tu email autorizado
           name: savedContact.name,
         },
       ];
-      await client.send({
-        from: sender,
-        to: recipients,
-        subject: '¡Gracias por tu contacto!',
-        text: `Hola ${savedContact.name}, gracias por contactarnos. Pronto te responderemos.`,
-        category: 'Contacto',
-      });
+      try {
+        console.log('TOKEN:', TOKEN); // <-- Verifica que el token se lee
+        const client = new MailtrapClient({ token: TOKEN });
+        
+        console.log('Enviando email a:', savedContact.email);
+        await client.send({
+          from: sender,
+          to: recipients,
+          subject: '¡Gracias por tu contacto!',
+          text: `Hola ${savedContact.name}, gracias por contactarnos. Pronto te responderemos.`,
+          category: 'Contacto',
+        });
+        console.log('Email enviado exitosamente');
+      } catch (error) {
+        console.error('Error detallado:', error);
+        throw new Error(`Error creating contact: ${error.message}`);
+      }
 
       return savedContact;
     } catch (error) {
