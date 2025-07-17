@@ -21,13 +21,10 @@ export class ContactService {
       // Enviar email con Mailtrap
       const TOKEN = this.configService.get<string>('API_TOKEN_MAIL');
       if (!TOKEN) throw new Error('API_TOKEN_MAIL is not set in environment variables');
-      const client = new MailtrapClient({
-        token: TOKEN,
-        // testInboxId: 3901100, // Opcional, si tienes un inbox de test
-      });
+      const client = new MailtrapClient({ token: TOKEN });
       const sender = {
-        email: 'kevinmanuelarteagaruiz@gmail.com',
-        name: 'Mailtrap Test',
+        email: 'hello@example.com',
+        name: 'UTSH Viajes',
       };
       const recipients = [
         {
