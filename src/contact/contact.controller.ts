@@ -26,14 +26,6 @@ export class ContactController {
       // Guardar el contacto en MongoDB
       const contact = await this.contactService.create(createContactDto);
       
-      // Enviar email de confirmación al usuario
-      await this.emailService.sendContactConfirmation({
-        name: contact.name,
-        email: contact.email,
-        destination: contact.destination,
-        message: contact.message
-      });
-      
       // Enviar notificación al administrador
       await this.emailService.sendAdminNotification({
         name: contact.name,
