@@ -29,7 +29,7 @@ export class EmailService {
   }): Promise<boolean> {
     try {
       const sentFrom = new Sender(
-        '2022023@utsh.edu.mx', // Cambia por tu dominio verificado
+        'noreply@test-xkjn41m74781.mlsender.net', // Dominio de prueba verificado
         'VIAJES UTSH'
       );
 
@@ -66,7 +66,7 @@ export class EmailService {
   }): Promise<boolean> {
     try {
       const sentFrom = new Sender(
-        '2022023@utsh.edu.mx', // Cambia por tu dominio verificado
+        'noreply@test-xkjn41m74781.mlsender.net', // Dominio de prueba verificado
         'VIAJES UTSH - Sistema de Notificaciones'
       );
 
@@ -106,7 +106,7 @@ export class EmailService {
   }): Promise<boolean> {
     try {
       const sentFrom = new Sender(
-        '2022023@utsh.edu.mx', // Cambia por tu dominio verificado
+        'noreply@test-xkjn41m74781.mlsender.net', // Dominio de prueba verificado
         'VIAJES UTSH'
       );
 
@@ -138,7 +138,7 @@ export class EmailService {
   async sendCustomEmail(to: string, toName: string, subject: string, htmlContent: string, textContent?: string): Promise<boolean> {
     try {
       const sentFrom = new Sender(
-        '2022023@utsh.edu.mx', // Cambia por tu dominio verificado
+        'noreply@test-xkjn41m74781.mlsender.net', // Dominio de prueba verificado
         'VIAJES UTSH'
       );
 
