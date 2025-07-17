@@ -28,7 +28,7 @@ export class ContactService {
       };
       const recipients = [
         {
-          email: savedContact.email,// <-- Tu email autorizado
+          email: 'kevinmanuelarteagaruiz@gmail.com', // <-- Tu email autorizado
           name: savedContact.name,
         },
       ];
