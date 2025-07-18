@@ -32,7 +32,7 @@ export class ContactService {
         from: 'UTSH Viajes <hi@demomailtrap.co>',
         to: 'kevinmanuelarteagaruiz@gmail.com', // destinatario dinámico
         subject: '¡Gracias por tu contacto!',
-        text: `Hola ${savedContact.name}, gracias por contactarnos. Pronto te responderemos.`,
+        text: `Hola ${savedContact.name}, gracias por contactarnos.\n\nEstos son los datos que registraste:\n\nNombre: ${savedContact.name}\nEmail: ${savedContact.email}\nDestino: ${savedContact.destination}\nMensaje: ${savedContact.message}\n\nPronto te responderemos.`,
       });
 
       return savedContact;
