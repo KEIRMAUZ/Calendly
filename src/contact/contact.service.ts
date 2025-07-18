@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Contact, ContactDocument } from './schemas/contact.schema';
 import { CreateContactDto } from './dto/create-contact.dto';
-import { MailtrapClient } from 'mailtrap';
+import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -18,37 +18,22 @@ export class ContactService {
       const newContact = new this.contactModel(createContactDto);
       const savedContact = await newContact.save();
 
-      // Enviar email con Mailtrap
-      const TOKEN = this.configService.get<string>('API_TOKEN_MAIL');
-      if (!TOKEN) throw new Error('API_TOKEN_MAIL is not set in environment variables');
-      const client = new MailtrapClient({ token: TOKEN });
-      const sender = {
-        email: 'hi@demomailtrap.co', // <-- Usa un dominio de Mailtrap autorizado
-        name: 'UTSH Viajes',
-      };
-      const recipients = [
-        {
-          email: 'kevinmanuelarteagaruiz@gmail.com', // <-- Tu email autorizado
-          name: savedContact.name,
+      // Enviar email con Nodemailer y SMTP de Mailtrap
+      const transporter = nodemailer.createTransport({
+        host: 'sandbox.smtp.mailtrap.io',
+        port: 2525,
+        auth: {
+          user: 'bb68a4a1a0aa33', // tu usuario SMTP de Mailtrap
+          pass: '1885143f6d54a9', // tu contraseña SMTP de Mailtrap
         },
-      ];
-      try {
-        console.log('TOKEN:', TOKEN); // <-- Verifica que el token se lee
-        const client = new MailtrapClient({ token: TOKEN });
-        
-        console.log('Enviando email a:', savedContact.email);
-        await client.send({
-          from: sender,
-          to: recipients,
-          subject: '¡Gracias por tu contacto!',
-          text: `Hola ${savedContact.name}, gracias por contactarnos. Pronto te responderemos.`,
-          category: 'Contacto',
-        });
-        console.log('Email enviado exitosamente');
-      } catch (error) {
-        console.error('Error detallado:', error);
-        throw new Error(`Error creating contact: ${error.message}`);
-      }
+      });
+
+      await transporter.sendMail({
+        from: 'UTSH Viajes <hi@demomailtrap.co>',
+        to: savedContact.email, // destinatario dinámico
+        subject: '¡Gracias por tu contacto!',
+        text: `Hola ${savedContact.name}, gracias por contactarnos. Pronto te responderemos.`,
+      });
 
       return savedContact;
     } catch (error) {
