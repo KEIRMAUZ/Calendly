@@ -31,7 +31,7 @@ export class ContactService {
 
       await transporter.sendMail({
         from: 'UTSH Viajes <hi@demomailtrap.co>',
-        to: 'kevinmanuelarteagaruiz@gmail.com', // destinatario dinámico
+        to: savedContact.email, // destinatario dinámico
         subject: '¡Gracias por tu contacto!',
         text: `Hola ${savedContact.name}, gracias por contactarnos.\n\nEstos son los datos que registraste:\n\nNombre: ${savedContact.name}\nEmail: ${savedContact.email}\nDestino: ${savedContact.destination}\nMensaje: ${savedContact.message}\n\nPronto te responderemos.`,
       });
