@@ -24,8 +24,8 @@ export class ContactService {
         host: 'smtp.gmail.com',
         port: 587,
         auth: {
-          user: 'kevinmanuelarteagaruiz@gmail.com', // tu usuario SMTP de Mailtrap
-          pass: 'dzpl oacr ilrw lhus', // tu contraseña SMTP de Mailtrap
+          user: 'kevinmanuelarteagaruiz@gmail.com', 
+          pass: this.configService.get<string>('GMAIL_PASSWORD_API'), 
         },
       });
 
