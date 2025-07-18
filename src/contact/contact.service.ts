@@ -21,8 +21,8 @@ export class ContactService {
 
       // Enviar email con Nodemailer y SMTP de Mailtrap
       const transporter = nodemailer.createTransport({
-        host: 'sandbox.smtp.mailtrap.io',
-        port: 2525,
+        host: 'smtp.gmail.com',
+        port: 587,
         auth: {
           user: 'kevinmanuelarteagaruiz@gmail.com', // tu usuario SMTP de Mailtrap
           pass: 'dzpl oacr ilrw lhus', // tu contraseña SMTP de Mailtrap
