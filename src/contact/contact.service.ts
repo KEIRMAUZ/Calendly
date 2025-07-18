@@ -32,8 +32,32 @@ export class ContactService {
       await transporter.sendMail({
         from: 'UTSH Viajes <hi@demomailtrap.co>',
         to: savedContact.email, 
-        subject: '¡Gracias por tu contacto!',
-        text: `Hola ${savedContact.name}, gracias por contactarnos.\n\nEstos son los datos que registraste:\n\nNombre: ${savedContact.name}\nEmail: ${savedContact.email}\nDestino: ${savedContact.destination}\nMensaje: ${savedContact.message}\n\nPronto te responderemos.`,
+        subject: '¡Gracias por tu pre-registro en UTSH Viajes!',
+        html: `
+          <div style="font-family: Arial, sans-serif; background: #f4f6fb; padding: 32px;">
+            <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 32px;">
+              <h2 style="color: #2a5298; text-align: center;">¡Gracias por tu preferencia, ${savedContact.name}!</h2>
+              <p style="font-size: 1.1em; color: #333;">
+                Hemos recibido tu <b>pre-registro</b> para el destino <span style="color: #2a5298;">${savedContact.destination}</span>.
+              </p>
+              <p style="font-size: 1.1em; color: #333;">
+                Para completar tu registro, por favor utiliza el enlace que te proporcionó la página después de tu pre-registro.
+              </p>
+              <div style="background: #e3ecfa; border-radius: 8px; padding: 16px; margin: 24px 0;">
+                <b>¿Perdiste el enlace?</b><br>
+                Si no encuentras el enlace para finalizar tu registro, por favor realiza el pre-registro nuevamente desde nuestra página web.
+              </div>
+              <p style="font-size: 1.1em; color: #333;">
+                <b>¡Gracias por confiar en UTSH Viajes!</b><br>
+                Pronto nos pondremos en contacto contigo para más información.
+              </p>
+              <hr style="margin: 32px 0;">
+              <p style="font-size: 0.95em; color: #888; text-align: center;">
+                Si tienes dudas, responde a este correo o visita nuestra página.
+              </p>
+            </div>
+          </div>
+        `,
       });
 
       return savedContact;
