@@ -24,14 +24,14 @@ export class ContactService {
         host: 'sandbox.smtp.mailtrap.io',
         port: 2525,
         auth: {
-          user: 'bb68a4a1a0aa33', // tu usuario SMTP de Mailtrap
-          pass: '1885143f6d54a9', // tu contraseña SMTP de Mailtrap
+          user: 'kevinmanuelarteagaruiz@gmail.com', // tu usuario SMTP de Mailtrap
+          pass: 'dzpl oacr ilrw lhus', // tu contraseña SMTP de Mailtrap
         },
       });
 
       await transporter.sendMail({
         from: 'UTSH Viajes <hi@demomailtrap.co>',
-        to: savedContact.email, // destinatario dinámico
+        to: savedContact.email, 
         subject: '¡Gracias por tu contacto!',
         text: `Hola ${savedContact.name}, gracias por contactarnos.\n\nEstos son los datos que registraste:\n\nNombre: ${savedContact.name}\nEmail: ${savedContact.email}\nDestino: ${savedContact.destination}\nMensaje: ${savedContact.message}\n\nPronto te responderemos.`,
       });
