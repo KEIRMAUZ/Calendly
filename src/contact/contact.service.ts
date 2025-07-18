@@ -17,6 +17,7 @@ export class ContactService {
     try {
       const newContact = new this.contactModel(createContactDto);
       const savedContact = await newContact.save();
+      console.log('Contacto guardado en MongoDB:', savedContact);
 
       // Enviar email con Nodemailer y SMTP de Mailtrap
       const transporter = nodemailer.createTransport({
