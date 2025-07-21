@@ -40,12 +40,16 @@ export class ContactService {
               <p style="font-size: 1.1em; color: #333;">
                 Hemos recibido tu <b>pre-registro</b> para el destino <span style="color: #2a5298;">${savedContact.destination}</span>.
               </p>
-              <p style="font-size: 1.1em; color: #333;">
-                Para completar tu registro, por favor utiliza el enlace que te proporcionó la página después de tu pre-registro.
+              <p style="font-size: 1.1em; color: #333; margin-bottom: 24px;">
+                ¡Da el siguiente paso y agenda tu cita ahora!
               </p>
-              <div style="background: #e3ecfa; border-radius: 8px; padding: 16px; margin: 24px 0;">
+              <div style="text-align: center; margin-bottom: 24px;">
+                <a href="https://calendly.com/2022023-utsh/agenda-tu-vuelo" style="background: #2a5298; color: #fff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-size: 1.1em; font-weight: bold; display: inline-block;">Termina tu registro aquí</a>
+              </div>
+              <div style="background: #e3ecfa; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
                 <b>¿Perdiste el enlace?</b><br>
-                Si no encuentras el enlace para finalizar tu registro, por favor realiza el pre-registro nuevamente desde nuestra página web.
+                También puedes copiar y pegar este enlace en tu navegador:<br>
+                <span style="color: #2a5298; word-break: break-all;">https://calendly.com/2022023-utsh/agenda-tu-vuelo</span>
               </div>
               <p style="font-size: 1.1em; color: #333;">
                 <b>¡Gracias por confiar en UTSH Viajes!</b><br>
