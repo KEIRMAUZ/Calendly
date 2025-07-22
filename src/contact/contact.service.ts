@@ -29,6 +29,14 @@ export class ContactService {
         },
       });
 
+      // Construir URL de Calendly con prefill de nombre y email
+      const calendlyBase = 'https://calendly.com/2022023-utsh/agenda-tu-vuelo';
+      const params = new URLSearchParams({
+        name: savedContact.name,
+        email: savedContact.email
+      });
+      const calendlyLink = `${calendlyBase}?${params.toString()}`;
+
       await transporter.sendMail({
         from: 'UTSH Viajes <hi@demomailtrap.co>',
         to: savedContact.email, 
@@ -37,19 +45,16 @@ export class ContactService {
           <div style="font-family: Arial, sans-serif; background: #f4f6fb; padding: 32px;">
             <div style="max-width: 600px; margin: auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 32px;">
               <h2 style="color: #2a5298; text-align: center;">¡Gracias por tu preferencia, ${savedContact.name}!</h2>
-              <p style="font-size: 1.1em; color: #333;">
-                Hemos recibido tu <b>pre-registro</b> para el destino <span style="color: #2a5298;">${savedContact.destination}</span>.
-              </p>
               <p style="font-size: 1.1em; color: #333; margin-bottom: 24px;">
                 ¡Da el siguiente paso y agenda tu cita ahora!
               </p>
               <div style="text-align: center; margin-bottom: 24px;">
-                <a href="https://calendly.com/2022023-utsh/agenda-tu-vuelo" style="background: #2a5298; color: #fff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-size: 1.1em; font-weight: bold; display: inline-block;">Termina tu registro aquí</a>
+                <a href="${calendlyLink}" style="background: #2a5298; color: #fff; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-size: 1.1em; font-weight: bold; display: inline-block;">Termina tu registro aquí</a>
               </div>
               <div style="background: #e3ecfa; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
                 <b>¿Perdiste el enlace?</b><br>
                 También puedes copiar y pegar este enlace en tu navegador:<br>
-                <span style="color: #2a5298; word-break: break-all;">https://calendly.com/2022023-utsh/agenda-tu-vuelo</span>
+                <span style="color: #2a5298; word-break: break-all;">${calendlyLink}</span>
               </div>
               <p style="font-size: 1.1em; color: #333;">
                 <b>¡Gracias por confiar en UTSH Viajes!</b><br>
