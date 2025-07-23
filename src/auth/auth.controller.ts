@@ -1,4 +1,4 @@
-import { Controller, Get, Req, Res, UseGuards, Post } from '@nestjs/common';
+import { Controller, Get, Req, Res, UseGuards, Post, Body } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -54,5 +54,49 @@ export class AuthController {
   async logout(@Res() res: Response) {
     res.clearCookie('jwt');
     res.json({ message: 'Logged out successfully' });
+  }
+
+  // Registro de usuario
+  @Post('register')
+  async register(@Body() body: { email: string, password: string, securityQuestion: string, securityAnswer: string }) {
+    try {
+      const result = await this.authService.register(body);
+      return result;
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  // Login de usuario
+  @Post('login')
+  async login(@Body() body: { email: string, password: string }) {
+    try {
+      const result = await this.authService.loginLocal(body);
+      return result;
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  // Obtener pregunta de seguridad
+  @Post('security-question')
+  async getSecurityQuestion(@Body() body: { email: string }) {
+    try {
+      const result = await this.authService.getSecurityQuestion(body.email);
+      return { success: true, ...result };
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
+  }
+
+  // Resetear contraseña
+  @Post('reset-password')
+  async resetPassword(@Body() body: { email: string, securityAnswer: string, newPassword: string }) {
+    try {
+      const result = await this.authService.resetPassword(body);
+      return result;
+    } catch (error) {
+      return { success: false, message: error.message };
+    }
   }
 }

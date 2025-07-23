@@ -7,6 +7,7 @@ import { ContactModule } from './contact/contact.module';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { HttpModule } from '@nestjs/axios';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [ 
@@ -28,7 +29,8 @@ import { HttpModule } from '@nestjs/axios';
     }),
     AuthModule,
     CalendlyModule,
-    ContactModule
+    ContactModule,
+    UserModule
   ],
   controllers: [AppController],
   providers: [AppService],
