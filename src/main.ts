@@ -14,7 +14,8 @@ async function bootstrap() {
       'http://127.0.0.1:5174', // Alternativa localhost
       'http://localhost:4173', // Puerto de preview de Vite
       'http://127.0.0.1:4173',
-      'http://localhost:5173/', // Alternativa preview
+      'http://localhost:5173/',
+      'https://viajes-8vgc.vercel.app/', // Alternativa preview
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
