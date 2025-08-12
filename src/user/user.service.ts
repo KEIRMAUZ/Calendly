@@ -61,7 +61,7 @@ export class UserService {
               </p>
     
               <div style="text-align: center; margin-bottom: 40px;">
-                <a href="https://tu-sitio-web.com/explorar" style="background: #5a82c4; color: #ffffff; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: bold; display: inline-block; transition: background 0.3s ease;">
+                <a href="https://viajes-8vgc.vercel.app/" style="background: #5a82c4; color: #ffffff; padding: 16px 32px; border-radius: 8px; text-decoration: none; font-size: 18px; font-weight: bold; display: inline-block; transition: background 0.3s ease;">
                   Explora nuestros destinos
                 </a>
               </div>
